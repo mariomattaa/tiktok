@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TikTok Content Posting — Demo Flow</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121821; --ink:#e8eef7; --muted:#9bb0c9; --accent:#58a6ff; --ok:#2ecc71; --warn:#f39c12; }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#0b0f14,#0e141c);}
+    .wrap{max-width:980px;margin:48px auto;padding:0 16px;color:var(--ink)}
+    .brand{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.3px}
+    .badge{font-size:12px;padding:6px 10px;border-radius:8px;background:#1a2330;color:var(--muted);border:1px solid #243246}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+    .card{background:var(--card);border:1px solid #1c2431;border-radius:14px;padding:16px}
+    .card h3{margin:0 0 10px 0;font-size:15px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    button,.btn{appearance:none;background:#1f2b3a;border:1px solid #304155;color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer}
+    button:hover{border-color:#3a4f6a}
+    .primary{background:var(--accent);border:0;color:#071422}
+    .ok{color:var(--ok)} .warn{color:var(--warn)}
+    input[type="text"],input[type="url"]{width:100%;padding:10px;border-radius:10px;border:1px solid #2a394d;background:#0f151d;color:var(--ink)}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .log{height:360px;overflow:auto;background:#0c1219;border:1px solid #1b2432;border-radius:12px;padding:12px;font-family:ui-monospace,Consolas,monaco,monospace;font-size:12.5px;white-space:pre-wrap}
+    .muted{color:var(--muted)}
+    details{background:#0e151e;border:1px dashed #243246;border-radius:10px;padding:10px}
+    summary{cursor:pointer;color:var(--muted)}
+    .hr{height:1px;background:#1b2432;margin:12px 0}
+    .pill{padding:6px 10px;border-radius:999px;background:#0f1722;border:1px solid #223147;color:#a6b7cf;font-size:12px}
+    .footer{margin-top:12px;color:#98a9c2;font-size:12px}
+    a{color:#9bd0ff;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <h1>TikTok Content Posting — Demo</h1>
+      <div class="row">
+        <span id="modeBadge" class="badge">Mode: Demo (no real API calls)</span>
+        <a class="pill" href="./index.html">Home</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left: Flow -->
+      <div class="card">
+        <h3>1) Connect with TikTok</h3>
+        <div class="row">
+          <button id="btnLogin" class="primary">Connect with TikTok</button>
+          <span id="authState" class="muted">Not connected</span>
+        </div>
+        <div class="hr"></div>
+
+        <h3>2) Choose source</h3>
+        <div class="row">
+          <label><input type="radio" name="source" value="PULL_FROM_URL" checked/> PULL_FROM_URL</label>
+          <label><input type="radio" name="source" value="FILE_UPLOAD"/> FILE_UPLOAD</label>
+        </div>
+        <div id="pullInputs" class="split" style="margin-top:8px">
+          <input id="videoUrl" type="url" placeholder="https://your-verified-domain.com/path/clip.mp4"/>
+          <input id="coverUrl" type="url" placeholder="(Optional) Cover image URL"/>
+        </div>
+        <div id="fileInputs" class="row" style="display:none;margin-top:8px">
+          <input id="videoFile" type="file" accept="video/mp4,video/mov"/>
+          <span class="muted">Max ~10s for the demo recording.</span>
+        </div>
+        <div class="hr"></div>
+
+        <h3>3) Publish</h3>
+        <div class="row">
+          <button id="btnPublish">Start Upload</button>
+          <span id="pubState" class="muted">Idle</span>
+        </div>
+
+        <div class="hr"></div>
+        <details>
+          <summary>Show API steps (what the backend would call)</summary>
+          <div style="margin-top:10px">
+            <p class="muted">These are the server-side calls you’d narrate in the video. In Demo Mode we only simulate them.</p>
+            <ol>
+              <li>OAuth: exchange <code>code</code> → <code>access_token</code>.</li>
+              <li><b>Init upload</b>: <code>/v2/post/publish/inbox/video/init/</code> with <code>source_info.source</code> = PULL_FROM_URL or FILE_UPLOAD.</li>
+              <li>If FILE_UPLOAD: PUT chunks to returned <code>upload_url</code>.</li>
+              <li><b>Publish</b>: receive <code>publish_id</code>; poll status endpoint until <code>SUCCEEDED</code> or <code>DRAFT</code>.</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+
+      <!-- Right: Console -->
+      <div class="card">
+        <h3>Live log</h3>
+        <div id="log" class="log"></div>
+        <div class="footer">Tip: for the review recording, keep this log visible while you click each step.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Recording checklist</h3>
+      <ul>
+        <li>Start on <code>https://mariomattaa.github.io/tiktok/demo.html</code> so the domain matches your app.</li>
+        <li>Click <b>Connect with TikTok</b> → show consent → return to this page.</li>
+        <li>Pick <b>PULL_FROM_URL</b> with a hosted short MP4, or choose <b>FILE_UPLOAD</b> and select a local clip.</li>
+        <li>Click <b>Start Upload</b> → watch simulated steps and “status: DRAFT/PUBLISHED”.</li>
+        <li>Open the TikTok app/web and show the clip in <b>Drafts</b> (or posted, if you later switch to Real Mode).</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+/** ====== CONFIG ====== 
+ * demoMode=true: no network calls; logs are simulated.
+ * demoMode=false: page will POST to your backend proxy endpoints (you add later).
+ */
+const demoMode = true;
+const BACKEND_BASE = "https://your-backend.example.com"; // only used if demoMode=false
+
+// simple log helper
+const $ = (s)=>document.querySelector(s);
+const log = (msg) => {
+  const el = $("#log");
+  const time = new Date().toLocaleTimeString();
+  el.textContent += `[${time}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+};
+
+const state = {
+  connected: false,
+  token: null,
+  source: "PULL_FROM_URL",
+  publishId: null
+};
+
+function setModeBadge(){
+  $("#modeBadge").textContent = `Mode: ${demoMode ? "Demo (no real API calls)" : "Real (calls your backend)"}`;
+}
+
+function updateAuthUI(){
+  $("#authState").textContent = state.connected ? "Connected ✔" : "Not connected";
+}
+
+function updateSourceUI(){
+  if(state.source === "PULL_FROM_URL"){
+    $("#pullInputs").style.display = "grid";
+    $("#fileInputs").style.display = "none";
+  }else{
+    $("#pullInputs").style.display = "none";
+    $("#fileInputs").style.display = "flex";
+  }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ------------ Events ------------
+document.querySelectorAll('input[name="source"]').forEach(r=>{
+  r.addEventListener('change', e=>{
+    state.source = e.target.value;
+    updateSourceUI();
+    log(`Source set to ${state.source}`);
+  });
+});
+
+$("#btnLogin").addEventListener('click', async ()=>{
+  // In real life: redirect to TikTok OAuth
+  if(demoMode){
+    log("Opening TikTok OAuth (simulated)...");
+    await sleep(800);
+    state.connected = true;
+    state.token = "demo_access_token_xyz";
+    updateAuthUI();
+    log("Returned from consent; received access_token (simulated).");
+  } else {
+    window.location.href = `${BACKEND_BASE}/auth/tiktok/login`;
+  }
+});
+
+$("#btnPublish").addEventListener('click', async ()=>{
+  if(!state.connected){ log("⚠ Please connect with TikTok first."); return; }
+
+  const source = state.source;
+  const vUrl = $("#videoUrl").value.trim();
+  const cUrl = $("#coverUrl").value.trim();
+  const file = $("#videoFile").files[0];
+  $("#pubState").textContent = "Starting…";
+
+  if(source === "PULL_FROM_URL" && !vUrl){
+    log("⚠ Enter a video URL first.");
+    return;
+  }
+  if(source === "FILE_UPLOAD" && !file){
+    log("⚠ Choose a video file first.");
+    return;
+  }
+
+  try{
+    if(demoMode){
+      // ------- SIMULATED FLOW -------
+      log("Init upload request → /v2/post/publish/inbox/video/init/ (simulated)");
+      await sleep(600);
+      if(source === "FILE_UPLOAD"){
+        log("Received upload_url; uploading chunks via PUT (simulated 3 chunks)...");
+        await sleep(500); log("Chunk 1/3 uploaded.");
+        await sleep(500); log("Chunk 2/3 uploaded.");
+        await sleep(500); log("Chunk 3/3 uploaded.");
+      } else {
+        log(`Using PULL_FROM_URL with: ${vUrl}`);
+        if(cUrl) log(`Cover image URL: ${cUrl}`);
+        await sleep(900);
+        log("TikTok fetching your media from the verified domain (simulated)...");
+      }
+      await sleep(800);
+      state.publishId = "pub_demo_12345";
+      log(`Publish started; publish_id = ${state.publishId}`);
+      $("#pubState").textContent = "Processing…";
+      // Poll
+      for(let i=0;i<3;i++){
+        await sleep(900);
+        log("Polling status… processing");
+      }
+      const outcome = Math.random() < 0.7 ? "DRAFT" : "PUBLISHED";
+      log(`Final status: ${outcome}`);
+      $("#pubState").textContent = `Done → ${outcome}`;
+      if(outcome === "DRAFT"){
+        log("Open TikTok app → Inbox/Drafts to complete the post.");
+      }
+    } else {
+      // ------- REAL FLOW (requires your backend proxy) -------
+      // 1) INIT
+      const initRes = await fetch(`${BACKEND_BASE}/tiktok/init`, {
+        method: "POST",
+        headers: { "content-type":"application/json" },
+        body: JSON.stringify({
+          source,
+          video_url: vUrl || null,
+          cover_url: cUrl || null,
+          filename: file ? file.name : null
+        })
+      }).then(r=>r.json());
+      log(`Init OK; upload_url=${initRes.upload_url || "n/a"}`);
+
+      // 2) FILE UPLOAD (if needed)
+      if(source === "FILE_UPLOAD" && initRes.upload_url){
+        const up = await fetch(initRes.upload_url, { method:"PUT", body:file });
+        log(`PUT ${up.status} to upload_url`);
+      }
+
+      // 3) PUBLISH + POLL
+      const pub = await fetch(`${BACKEND_BASE}/tiktok/publish`, { method:"POST" }).then(r=>r.json());
+      state.publishId = pub.publish_id;
+      log(`publish_id=${state.publishId}`);
+      $("#pubState").textContent = "Processing…";
+
+      let status = "PROCESSING";
+      while(status === "PROCESSING"){
+        await sleep(1200);
+        const s = await fetch(`${BACKEND_BASE}/tiktok/status?publish_id=${state.publishId}`).then(r=>r.json());
+        status = s.status;
+        log(`Polling… ${status}`);
+      }
+      $("#pubState").textContent = `Done → ${status}`;
+      if(status === "DRAFT") log("Open TikTok → Drafts to finalize.");
+    }
+  }catch(e){
+    log(`❌ Error: ${e.message || e}`);
+    $("#pubState").textContent = "Error";
+  }
+});
+
+// init
+setModeBadge();
+updateAuthUI();
+updateSourceUI();
+log("Ready. Follow the 1→2→3 steps for your review video.");
+</script>
+</body>
+</html>
