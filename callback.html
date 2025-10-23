@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TikTok OAuth Callback</title>
+<h1>TikTok OAuth Callback</h1>
+<p id="msg">Processing…</p>
+<script>
+  // TikTok sends ?code=...&state=...
+  const params = new URLSearchParams(location.search);
+  const code = params.get("code");
+  const state = params.get("state");
+  if (code) {
+    document.getElementById("msg").innerText =
+      "Authorized. Code: " + code + "  State: " + (state||"(none)");
+    // In production: send this code to your backend to exchange for access_token
+    // fetch("https://YOUR-BACKEND/auth/tiktok/exchange", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ code, state }) });
+  } else {
+    document.getElementById("msg").innerText = "No code found in URL.";
+  }
+</script>
